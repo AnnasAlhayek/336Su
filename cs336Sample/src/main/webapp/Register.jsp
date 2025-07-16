@@ -1,0 +1,5 @@
+<form action="ProcessRegistration.jsp" method="post">
+    Username: <input type="text" name="username"><br>
+    Password: <input type="password" name="password"><br>
+    <input type="submit" value="Register">
+</form>
