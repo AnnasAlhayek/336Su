@@ -9,7 +9,7 @@
 <body>
 	<h1>Welcome, please select your account type to continue</h1>
      
-     <a href="CustomerLogin.jsp" ><button>Customer</button></a>
+     <a href="Login.jsp" ><button>Customer</button></a>
      <a href="CustomerRepLogin.jsp"><button>Customer Representative</button></a>
      <a href="AdminLogin.jsp"><button>Administrator</button></a>
     
