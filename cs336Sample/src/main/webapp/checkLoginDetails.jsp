@@ -9,8 +9,9 @@ ResultSet rs;
 rs = st.executeQuery("select * from Login where username='" + username + "' and password='" + password+ "'");
 if (rs.next()) {
 session.setAttribute("username", username); // the username will be stored in the session
+session.setAttribute("email", rs.getString("Email"));
 out.println("welcome " + username);
-out.println("<a href='logout.jsp'>Log out</a>");
+out.println("<a href='Logout.jsp'>Log out</a>");
 response.sendRedirect("Success.jsp");
 } else {
 out.println("Invalid password <a href='Login.jsp'>try again</a>");
