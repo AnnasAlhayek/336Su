@@ -1,6 +1,10 @@
-
 create database 336project;
 USE 336project;
+
+-- Admin Login
+CREATE TABLE AdminLog(
+Username VARCHAR(100), Password varchar(100));
+INSERT INTO AdminLog(Username,Password) Values ('test','test');
 
 CREATE TABLE Login ( 
 Email VARCHAR(100) PRIMARY KEY, 
@@ -27,14 +31,13 @@ INSERT INTO Login (
 );
 
 -- EMPLOYEE 
-CREATE TABLE Employee ( 
-SSN CHAR(9) PRIMARY KEY, 
-Username VARCHAR(50) UNIQUE NOT NULL, 
-Password VARCHAR(100) NOT NULL, 
-FirstName VARCHAR(50), 
-LastName VARCHAR(50), 
-Role ENUM('Admin', 'CustomerRep') NOT NULL 
-); 
+CREATE TABLE Employee (
+    SSN CHAR(9) PRIMARY KEY, 
+    Username VARCHAR(50) UNIQUE NOT NULL, 
+    Password VARCHAR(100) NOT NULL, 
+    FirstName VARCHAR(50), 
+    LastName VARCHAR(50)); 
+
 -- STATION 
 CREATE TABLE Station ( 
 StationID INT PRIMARY KEY, 
