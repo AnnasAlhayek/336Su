@@ -1,0 +1,248 @@
+DROP DATABASE IF EXISTS `336project`;
+CREATE DATABASE `336project`;
+USE `336project`;
+
+-- 1. Login table
+CREATE TABLE Login ( 
+  Email VARCHAR(100) PRIMARY KEY, 
+  Username VARCHAR(50) UNIQUE, 
+  Password VARCHAR(100) NOT NULL, 
+  FirstName VARCHAR(50), 
+  LastName VARCHAR(50), 
+  PassengerType ENUM('Adult', 'Child', 'Senior', 'Disabled') DEFAULT 'Adult'
+);
+
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType)
+VALUES (
+  'john.doe@example.com', 'johndoe', 'password123', 'John', 'Doe', 'Adult'
+);
+
+-- 2. Employee table
+CREATE TABLE Employee ( 
+  SSN CHAR(9) PRIMARY KEY, 
+  Username VARCHAR(50) UNIQUE NOT NULL, 
+  Password VARCHAR(100) NOT NULL, 
+  FirstName VARCHAR(50), 
+  LastName VARCHAR(50), 
+  Role ENUM('Admin', 'CustomerRep') NOT NULL
+);
+
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role)
+VALUES ('111223333', 'rep1', 'securepass', 'John', 'Doe', 'CustomerRep');
+
+-- 3. Station, Train, Schedule, Stop
+CREATE TABLE Station ( 
+  StationID INT PRIMARY KEY, 
+  Name VARCHAR(100), 
+  City VARCHAR(100), 
+  State CHAR(2)
+);
+
+CREATE TABLE Train ( 
+  TrainID INT PRIMARY KEY, 
+  TransitLineName VARCHAR(100)
+);
+
+CREATE TABLE Schedule ( 
+  ScheduleID INT PRIMARY KEY, 
+  TrainID INT NOT NULL, 
+  OriginStationID INT NOT NULL,
+  DestinationStationID INT NOT NULL, 
+  DepartureDateTime DATETIME, 
+  ArrivalDateTime DATETIME, 
+  TravelTime INT,  -- in minutes
+  Fare DECIMAL(6,2),
+  TransitLine VARCHAR(100),    -- for JSP filter
+  Origin VARCHAR(100),
+  Destination VARCHAR(100),
+  DepartureTime TIME,
+  FOREIGN KEY (TrainID) REFERENCES Train(TrainID), 
+  FOREIGN KEY (OriginStationID) REFERENCES Station(StationID), 
+  FOREIGN KEY (DestinationStationID) REFERENCES Station(StationID)
+);
+
+CREATE TABLE Stop ( 
+  ScheduleID INT, 
+  StationID INT, 
+  StopOrder INT, 
+  ArrivalTime TIME, 
+  DepartureTime TIME, 
+  PRIMARY KEY (ScheduleID, StationID), 
+  FOREIGN KEY (ScheduleID) REFERENCES Schedule(ScheduleID), 
+  FOREIGN KEY (StationID) REFERENCES Station(StationID)
+);
+
+-- 4. Reservation
+CREATE TABLE Reservation ( 
+  ReservationNumber INT PRIMARY KEY, 
+  Email VARCHAR(100) NOT NULL, 
+  ScheduleID INT NOT NULL, 
+  ReservationDate DATE, 
+  TravelDate DATETIME, 
+  TotalFare DECIMAL(6,2), 
+  TripType ENUM('OneWay', 'RoundTrip') DEFAULT 'OneWay', 
+  FOREIGN KEY (Email) REFERENCES Login(Email), 
+  FOREIGN KEY (ScheduleID) REFERENCES Schedule(ScheduleID)
+);
+
+-- 5. Question
+CREATE TABLE Question ( 
+  QuestionID INT PRIMARY KEY AUTO_INCREMENT, 
+  Email VARCHAR(100), 
+  QuestionText VARCHAR(500), 
+  AnswerText VARCHAR(500), 
+  ResponderSSN CHAR(9), 
+  FOREIGN KEY (Email) REFERENCES Login(Email), 
+  FOREIGN KEY (ResponderSSN) REFERENCES Employee(SSN)
+);
+
+-- 6. Insert lookup/test data
+INSERT INTO Station (StationID, Name, City, State) VALUES
+  (1, 'New York', 'New York', 'NY'),
+  (2, 'Boston', 'Boston', 'MA');
+
+INSERT INTO Train (TrainID, TransitLineName) VALUES
+  (100, 'Northeast Express');
+
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID,
+                     DepartureDateTime, ArrivalDateTime, TravelTime, Fare,
+                     TransitLine, Origin, Destination, DepartureTime)
+VALUES
+  (1001, 100, 1, 2, '2025-07-20 08:00:00', '2025-07-20 11:30:00', 210, 49.99,
+   'Northeast Express', 'New York', 'Boston', '08:00:00');
+
+-- 7. Sample customer questions
+INSERT INTO Question (Email, QuestionText)
+VALUES 
+  ('john.doe@example.com', 'What time does the Red Line depart from Newark?'),
+  ('john.doe@example.com', 'Can I bring a bike on the train?'),
+  ('john.doe@example.com', 'Is Wi-Fi available on the Blue Line?');
+
+-- 8. Sample existing answers
+UPDATE Question
+SET AnswerText = 'The Red Line departs at 08:30 AM.', ResponderSSN = '111223333'
+WHERE QuestionID = 1;
+
+-- 9. Example reservation
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate,
+                         TravelDate, TotalFare, TripType)
+VALUES
+  (2001, 'john.doe@example.com', 1001, '2025-07-20', '2025-07-20 08:00:00', 49.99, 'OneWay');
+
+-- 10. Optional Views
+CREATE VIEW MonthlySales AS
+SELECT DATE_FORMAT(ReservationDate, '%Y-%m') AS Month,
+       SUM(TotalFare) AS TotalRevenue
+FROM Reservation
+GROUP BY Month;
+
+CREATE VIEW TopTransitLines AS
+SELECT t.TransitLineName,
+       COUNT(r.ReservationNumber) AS TotalReservations
+FROM Reservation r
+JOIN Schedule s ON r.ScheduleID = s.ScheduleID
+JOIN Train t ON s.TrainID = t.TrainID
+GROUP BY t.TransitLineName
+ORDER BY TotalReservations DESC
+LIMIT 5;
+
+CREATE VIEW CustomerRevenue AS
+SELECT c.Email,
+       CONCAT(c.FirstName, ' ', c.LastName) AS FullName,
+       SUM(r.TotalFare) AS Revenue
+FROM Login c
+JOIN Reservation r ON c.Email = r.Email
+GROUP BY c.Email, FullName
+ORDER BY Revenue DESC;
+
+INSERT INTO Station (StationID, Name, City, State) VALUES (3, 'Station3', 'City3', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (4, 'Station4', 'City4', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (5, 'Station5', 'City5', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (6, 'Station6', 'City6', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (7, 'Station7', 'City7', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (8, 'Station8', 'City8', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (9, 'Station9', 'City9', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (10, 'Station10', 'City10', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (11, 'Station11', 'City11', 'ST');
+INSERT INTO Station (StationID, Name, City, State) VALUES (12, 'Station12', 'City12', 'ST');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (101, 'TransitLine101');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (102, 'TransitLine102');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (103, 'TransitLine103');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (104, 'TransitLine104');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (105, 'TransitLine105');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (106, 'TransitLine106');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (107, 'TransitLine107');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (108, 'TransitLine108');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (109, 'TransitLine109');
+INSERT INTO Train (TrainID, TransitLineName) VALUES (110, 'TransitLine110');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user1@example.com', 'user1', 'pass1', 'Alice', 'Wilson', 'Child');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user2@example.com', 'user2', 'pass2', 'David', 'Smith', 'Child');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user3@example.com', 'user3', 'pass3', 'Henry', 'Garcia', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user4@example.com', 'user4', 'pass4', 'Henry', 'Johnson', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user5@example.com', 'user5', 'pass5', 'Isla', 'Brown', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user6@example.com', 'user6', 'pass6', 'Bob', 'Williams', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user7@example.com', 'user7', 'pass7', 'Alice', 'Williams', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user8@example.com', 'user8', 'pass8', 'Bob', 'Smith', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user9@example.com', 'user9', 'pass9', 'Bob', 'Smith', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user10@example.com', 'user10', 'pass10', 'Frank', 'Garcia', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user11@example.com', 'user11', 'pass11', 'Carol', 'Smith', 'Disabled');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user12@example.com', 'user12', 'pass12', 'Grace', 'Johnson', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user13@example.com', 'user13', 'pass13', 'David', 'Davis', 'Child');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user14@example.com', 'user14', 'pass14', 'Carol', 'Brown', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user15@example.com', 'user15', 'pass15', 'Frank', 'Davis', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user16@example.com', 'user16', 'pass16', 'Frank', 'Garcia', 'Senior');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user17@example.com', 'user17', 'pass17', 'Bob', 'Davis', 'Disabled');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user18@example.com', 'user18', 'pass18', 'Isla', 'Johnson', 'Adult');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user19@example.com', 'user19', 'pass19', 'Grace', 'Davis', 'Disabled');
+INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType) VALUES ('user20@example.com', 'user20', 'pass20', 'Isla', 'Davis', 'Adult');
+
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000002', 'rep2', 'secure2', 'Frank', 'Smith', 'CustomerRep');
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000003', 'rep3', 'secure3', 'Jack', 'Williams', 'CustomerRep');
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000004', 'rep4', 'secure4', 'Isla', 'Garcia', 'Admin');
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000005', 'rep5', 'secure5', 'Carol', 'Davis', 'CustomerRep');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1002, 103, 9, 7, '2025-08-01 12:00:00', '2025-08-01 16:00:00', 240, 14.33, 'TransitLine103', 'Station9', 'Station7', '12:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1003, 105, 8, 3, '2025-08-01 07:00:00', '2025-08-01 10:00:00', 180, 60.73, 'TransitLine105', 'Station8', 'Station3', '07:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1004, 101, 6, 4, '2025-08-01 07:00:00', '2025-08-01 08:00:00', 60, 32.39, 'TransitLine101', 'Station6', 'Station4', '07:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1005, 101, 10, 12, '2025-08-01 20:00:00', '2025-08-01 21:00:00', 60, 82.04, 'TransitLine101', 'Station10', 'Station12', '20:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1006, 105, 4, 5, '2025-08-01 19:00:00', '2025-08-01 20:00:00', 60, 39.13, 'TransitLine105', 'Station4', 'Station5', '19:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1007, 105, 5, 3, '2025-08-01 19:00:00', '2025-08-01 20:00:00', 60, 37.89, 'TransitLine105', 'Station5', 'Station3', '19:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1008, 104, 12, 3, '2025-08-01 11:00:00', '2025-08-01 14:00:00', 180, 41.09, 'TransitLine104', 'Station12', 'Station3', '11:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1009, 103, 6, 5, '2025-08-01 16:00:00', '2025-08-01 18:00:00', 120, 85.31, 'TransitLine103', 'Station6', 'Station5', '16:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1010, 110, 12, 7, '2025-08-01 10:00:00', '2025-08-01 14:00:00', 240, 92.62, 'TransitLine110', 'Station12', 'Station7', '10:00:00');
+INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1011, 108, 7, 10, '2025-08-01 12:00:00', '2025-08-01 14:00:00', 120, 22.07, 'TransitLine108', 'Station7', 'Station10', '12:00:00');
+INSERT INTO Question (Email, QuestionText) VALUES ('user12@example.com', 'What is the status of train line 108?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user7@example.com', 'What is the status of train line 108?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user11@example.com', 'What is the status of train line 105?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user6@example.com', 'What is the status of train line 109?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user5@example.com', 'What is the status of train line 101?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user4@example.com', 'What is the status of train line 105?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user8@example.com', 'What is the status of train line 102?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user10@example.com', 'What is the status of train line 105?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user17@example.com', 'What is the status of train line 103?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user11@example.com', 'What is the status of train line 107?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user15@example.com', 'What is the status of train line 101?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user9@example.com', 'What is the status of train line 110?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user18@example.com', 'What is the status of train line 102?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user15@example.com', 'What is the status of train line 104?');
+INSERT INTO Question (Email, QuestionText) VALUES ('user11@example.com', 'What is the status of train line 107?');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2002, 'user12@example.com', 1004, '2025-07-01', '2025-07-03 00:00:00', 32.11, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2003, 'user1@example.com', 1002, '2025-07-06', '2025-07-09 00:00:00', 19.84, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2004, 'user17@example.com', 1011, '2025-07-13', '2025-07-16 00:00:00', 71.92, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2005, 'user19@example.com', 1007, '2025-07-24', '2025-07-25 00:00:00', 84.14, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2006, 'user15@example.com', 1004, '2025-07-05', '2025-07-07 00:00:00', 16.43, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2007, 'user6@example.com', 1006, '2025-07-03', '2025-07-04 00:00:00', 53.26, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2008, 'user6@example.com', 1011, '2025-07-24', '2025-07-26 00:00:00', 41.25, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2009, 'user19@example.com', 1003, '2025-07-04', '2025-07-05 00:00:00', 43.88, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2010, 'user8@example.com', 1009, '2025-07-13', '2025-07-15 00:00:00', 85.86, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2011, 'user18@example.com', 1010, '2025-07-04', '2025-07-06 00:00:00', 59.51, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2012, 'user10@example.com', 1007, '2025-07-24', '2025-07-26 00:00:00', 30.07, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2013, 'user1@example.com', 1004, '2025-07-19', '2025-07-21 00:00:00', 26.83, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2014, 'user4@example.com', 1007, '2025-07-03', '2025-07-06 00:00:00', 32.39, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2015, 'user16@example.com', 1005, '2025-07-10', '2025-07-15 00:00:00', 83.02, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2016, 'user15@example.com', 1006, '2025-07-07', '2025-07-09 00:00:00', 60.46, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2017, 'user1@example.com', 1005, '2025-07-09', '2025-07-10 00:00:00', 55.07, 'OneWay');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2018, 'user9@example.com', 1007, '2025-07-14', '2025-07-19 00:00:00', 67.67, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2019, 'user12@example.com', 1007, '2025-07-04', '2025-07-09 00:00:00', 77.7, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2020, 'user15@example.com', 1006, '2025-07-13', '2025-07-14 00:00:00', 14.08, 'RoundTrip');
+INSERT INTO Reservation (ReservationNumber, Email, ScheduleID, ReservationDate, TravelDate, TotalFare, TripType) VALUES (2021, 'user4@example.com', 1005, '2025-07-12', '2025-07-13 00:00:00', 49.38, 'RoundTrip');
+
