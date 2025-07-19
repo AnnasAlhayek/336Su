@@ -18,7 +18,7 @@
 <ul>
     <li><a href="makeReservation.jsp">Make a New Reservation</a></li>
     <li><a href="cancelReservation.jsp">Cancel a Reservation</a></li>
-    <li><a href="viewReservations.jsp">View Current & Past Reservations</a></li>
+    <li><a href="viewReservations.jsp">View Current and Past Reservations</a></li>
 </ul>
 
 <br>
