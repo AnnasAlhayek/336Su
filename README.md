@@ -39,7 +39,7 @@ Test Accounts:
 --------------------------------------------------------------------
 Admin account:
   Username: admin
-  Password: admin123
+  Password: secure4
 
 Customer Representative account:
   Username: rep1
