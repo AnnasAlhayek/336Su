@@ -46,8 +46,8 @@ Customer Representative account:
   Password: rep123
 
 Test Customer account:
-  Username: testuser
-  Password: test123
+  Username: johndoe
+  Password: password123
 
 Test Data:
 --------------------------------------------------------------------
