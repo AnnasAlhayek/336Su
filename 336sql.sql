@@ -201,7 +201,7 @@ INSERT INTO Login (Email, Username, Password, FirstName, LastName, PassengerType
 
 INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000002', 'rep2', 'secure2', 'Frank', 'Smith', 'CustomerRep');
 INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000003', 'rep3', 'secure3', 'Jack', 'Williams', 'CustomerRep');
-INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000004', 'rep4', 'secure4', 'Isla', 'Garcia', 'Admin');
+INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000004', 'admin', 'secure4', 'Isla', 'Garcia', 'Admin');
 INSERT INTO Employee (SSN, Username, Password, FirstName, LastName, Role) VALUES ('100000005', 'rep5', 'secure5', 'Carol', 'Davis', 'CustomerRep');
 INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1002, 103, 9, 7, '2025-08-01 12:00:00', '2025-08-01 16:00:00', 240, 14.33, 'TransitLine103', 'Station9', 'Station7', '12:00:00');
 INSERT INTO Schedule (ScheduleID, TrainID, OriginStationID, DestinationStationID, DepartureDateTime, ArrivalDateTime, TravelTime, Fare, TransitLine, Origin, Destination, DepartureTime) VALUES (1003, 105, 8, 3, '2025-08-01 07:00:00', '2025-08-01 10:00:00', 180, 60.73, 'TransitLine105', 'Station8', 'Station3', '07:00:00');
