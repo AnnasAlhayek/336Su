@@ -87,5 +87,5 @@ Access control summary:
 Thank you for reviewing our project!
 
 Team:
-Annas Alhayek, Shrij Dave, Darsh Patel, Beshoy Yacoub
+Annas Alhayek, Shrij Dave, Darsh Patel
 
